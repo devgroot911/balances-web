@@ -28,11 +28,13 @@ export const SyncModal: React.FC<SyncModalProps> = ({
   onDataLoaded,
   onResetToSample,
 }) => {
-  const [activeTab, setActiveTab] = useState<'sharepoint' | 'googlesheets' | 'upload'>('sharepoint');
+  const [activeTab, setActiveTab] = useState<'sharepoint' | 'googlesheets' | 'upload'>('googlesheets');
   const [sharePointUrl, setSharePointUrl] = useState(
     'https://soscv-my.sharepoint.com/:x:/g/personal/gayan_rathnayake_soscvsrilanka_org/IQAVEppF2Jj2Spwa_PHVq7pxAf5gbDn2hmaAeYtPjEoIsZQ?e=zeTg9Y'
   );
-  const [googleSheetUrl, setGoogleSheetUrl] = useState('');
+  const [googleSheetUrl, setGoogleSheetUrl] = useState(
+    'https://docs.google.com/spreadsheets/d/1FPhFbVBHksaqiIllJhhkD6ay_rN8XY0vPPg3TRP1tZQ/edit?gid=0#gid=0'
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 

@@ -12,7 +12,7 @@ import initialSampleData from './sampleRows.json';
 
 const AUTO_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const DEFAULT_EXCEL_URL =
-  'https://docs.google.com/spreadsheets/d/1FPhFbVBHksaqiIllJhhkD6ay_rN8XY0vPPg3TRP1tZQ/edit?usp=sharing';
+  'https://docs.google.com/spreadsheets/d/1FPhFbVBHksaqiIllJhhkD6ay_rN8XY0vPPg3TRP1tZQ/edit?gid=0#gid=0';
 
 const initialFilterState: MonthlyFilterState = {
   activityCodes: [],
@@ -36,8 +36,8 @@ export default function App() {
   const [filters, setFilters] = useState<MonthlyFilterState>(initialFilterState);
   const [isSyncOpen, setIsSyncOpen] = useState(false);
   const [dataSource, setDataSource] = useState<DataSourceInfo>({
-    type: 'master',
-    name: 'SharePoint Master Sheet (SOS Children\'s Villages)',
+    type: 'googlesheets',
+    name: 'Google Sheets Budget Source',
     url: DEFAULT_EXCEL_URL,
     lastUpdated: 'Live',
     rowCount: initialSampleData.length,
@@ -104,9 +104,8 @@ export default function App() {
     setRecords(initialSampleData as BudgetRecord[]);
     setDataSource({
       type: 'master',
-      name: 'SharePoint Master Sheet (SOS Children\'s Villages)',
-      url: DEFAULT_EXCEL_URL,
-      lastUpdated: 'Reset to Master',
+      name: 'Sample Data',
+      lastUpdated: 'Reset to Sample',
       rowCount: initialSampleData.length,
     });
     handleResetFilters();
@@ -140,8 +139,8 @@ export default function App() {
 
         if (!isCancelled && rows.length > 0) {
           handleDataLoaded(rows, {
-            type: 'sharepoint',
-            name: configuredExcelUrl.split('/').pop() || 'Automatic Excel Sync',
+            type: 'googlesheets',
+            name: 'Google Sheets Budget Source',
             url: workbookUrl,
             lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             rowCount: rows.length,

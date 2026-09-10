@@ -1,4 +1,4 @@
-# Budget Balance PowerBI Report
+# Budget Balance Report
 
 Interactive monthly budget balance reporting with Excel, CSV, SharePoint, and Google Sheets synchronization.
 
@@ -30,10 +30,10 @@ The deployed app must use a workbook link that the serverless function can acces
 
 ## Automatic Excel Sync
 
-The default source is Gayan Rathnayake's SharePoint workbook. Place `standalone.html` and the workbook in the same SharePoint folder, then open the HTML while signed in to SharePoint. The report loads the default workbook when opened and refreshes it every five minutes.
+The default source is the configured Google Sheet. The report loads the sheet when opened and refreshes it every five minutes.
 
-For a workbook stored beside the HTML, you can override the default with the workbook filename:
+For another workbook or sheet, you can override the default with the `excel` query parameter:
 
 `standalone.html?excel=Budget_Balance.xlsx`
 
-The workbook must be accessible to the signed-in SharePoint user, and the filename must be URL-encoded if it contains spaces. A locally opened standalone file uses the local sync server instead, so run `npm run dev` first.
+The Google Sheet must be shared so the deployed sync function can access it. A locally opened standalone file fetches the sheet directly from the browser, so the sheet must also allow browser access.
