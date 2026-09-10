@@ -78,6 +78,11 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
   const [blSortOrder, setBlSortOrder] = useState<'desc' | 'asc' | 'code'>('desc');
   const [blTopN, setBlTopN] = useState<number>(18);
 
+  const reportRecords = useMemo(
+    () => (filters.excludeIncomeCategories ? records.filter((r) => !isIncomeRecord(r)) : records),
+    [records, filters.excludeIncomeCategories],
+  );
+
   // Keyboard shortcut: Escape exits fullscreen
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -120,10 +125,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
 
   // 1. Filter records for the table based on ALL active filters
   const filteredRecords = useMemo(() => {
-    return records.filter((r) => {
-      if (filters.excludeIncomeCategories && isIncomeRecord(r)) {
-        return false;
-      }
+    return reportRecords.filter((r) => {
       // Activity Code filter
       if (filters.activityCodes.length > 0 && !filters.activityCodes.includes(r.activityCode)) {
         return false;
@@ -175,12 +177,12 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
       }
       return true;
     });
-  }, [records, filters, monthKey]);
+  }, [reportRecords, filters, monthKey]);
 
   // Grand total for the month (unfiltered)
   const monthGrandTotal = useMemo(() => {
-    return records.reduce((acc, r) => acc + (Number((r as any)[monthKey]) || 0), 0);
-  }, [records, monthKey]);
+    return reportRecords.reduce((acc, r) => acc + (Number((r as any)[monthKey]) || 0), 0);
+  }, [reportRecords, monthKey]);
 
   // Filtered total for the month
   const filteredGrandTotal = useMemo(() => {
@@ -192,10 +194,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
   // 2. Chart Data: Sum of [Month] by Activity Code
   // Cross-filtered by BL, GL, Category, Amount filters (not by activityCodes itself so other bars can be clicked)
   const activityChartData = useMemo(() => {
-    let base = records;
-    if (filters.excludeIncomeCategories) {
-      base = base.filter((r) => !isIncomeRecord(r));
-    }
+    let base = reportRecords;
     if (filters.bls.length > 0) {
       base = base.filter((r) => filters.bls.includes(r.bl));
     }
@@ -241,7 +240,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
 
     return activityTopN >= 500 ? list : list.slice(0, activityTopN);
   }, [
-    records,
+    reportRecords,
     monthKey,
     filters.bls,
     filters.categories,
@@ -257,10 +256,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
   // 3. Chart Data: Sum of [Month] by BL
   // Cross-filtered by Activity Code, GL, Category, Amount filters (not by bls itself so all BL bars remain visible)
   const blChartData = useMemo(() => {
-    let base = records;
-    if (filters.excludeIncomeCategories) {
-      base = base.filter((r) => !isIncomeRecord(r));
-    }
+    let base = reportRecords;
     if (filters.activityCodes.length > 0) {
       base = base.filter((r) => filters.activityCodes.includes(r.activityCode));
     }
@@ -306,7 +302,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
 
     return blTopN >= 500 ? list : list.slice(0, blTopN);
   }, [
-    records,
+    reportRecords,
     monthKey,
     filters.activityCodes,
     filters.categories,
@@ -321,10 +317,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
 
   // 4. Chart Data: Operational Category Distribution
   const categoryChartData = useMemo(() => {
-    let base = records;
-    if (filters.excludeIncomeCategories) {
-      base = base.filter((r) => !isIncomeRecord(r));
-    }
+    let base = reportRecords;
     if (filters.activityCodes.length > 0) {
       base = base.filter((r) => filters.activityCodes.includes(r.activityCode));
     }
@@ -354,7 +347,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
     return Array.from(map.values())
       .filter((item) => item.amount > 0)
       .sort((a, b) => b.amount - a.amount);
-  }, [records, monthKey, filters.activityCodes, filters.bls, filters.excludeIncomeCategories]);
+  }, [reportRecords, monthKey, filters.activityCodes, filters.bls]);
 
   // Custom tooltips
   const CustomActivityTooltip = ({ active, payload }: any) => {
@@ -794,7 +787,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
 
       {/* 2. Top Slicers & Multi-Selection Filter Bar */}
       <FilterBar
-        records={records}
+        records={reportRecords}
         monthMeta={monthMeta}
         filters={filters}
         onUpdateFilters={onUpdateFilters}
@@ -809,7 +802,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
           {/* Left Column: Accounts Table */}
           <div className="lg:col-span-6 xl:col-span-6 flex flex-col">
             <AccountTable
-              allRecords={records}
+              allRecords={reportRecords}
               records={filteredRecords}
               monthMeta={monthMeta}
               filters={filters}
@@ -869,7 +862,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
 
       {viewMode === 'table' && (
         <AccountTable
-          allRecords={records}
+          allRecords={reportRecords}
           records={filteredRecords}
           monthMeta={monthMeta}
           filters={filters}
@@ -919,7 +912,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
                     Lines
                   </span>
                   <span className="text-sm font-bold text-white font-mono">
-                    {filteredRecords.length} / {records.length}
+                    {filteredRecords.length} / {reportRecords.length}
                   </span>
                 </div>
               </div>
@@ -950,7 +943,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
             {/* Left Side: Account Lines Table (fits 100% height, internal scroll only) */}
             <div className="lg:col-span-6 xl:col-span-6 h-full flex flex-col min-h-0 overflow-hidden">
               <AccountTable
-                allRecords={records}
+                allRecords={reportRecords}
                 records={filteredRecords}
                 monthMeta={monthMeta}
                 filters={filters}

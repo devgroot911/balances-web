@@ -47,7 +47,10 @@ export default function App() {
   // When switching tabs, clear the filters for the new month view
   const handleSelectTab = (tab: TabMode) => {
     setActiveTab(tab);
-    setFilters(initialFilterState);
+    setFilters((prev) => ({
+      ...initialFilterState,
+      excludeIncomeCategories: prev.excludeIncomeCategories,
+    }));
   };
 
   const handleResetFilters = () => {
