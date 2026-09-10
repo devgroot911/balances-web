@@ -35,11 +35,25 @@ function getDownloadUrl(inputUrl: string): string {
   return url.toString();
 }
 
+function parseNumber(value: unknown): number {
+  const number = typeof value === 'number' ? value : parseFloat(String(value || 0).replace(/,/g, ''));
+  return Number.isNaN(number) ? 0 : number;
+}
+
+function normalizeMatchValue(value: unknown): string {
+  const normalized = String(value ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+  return normalized === '0' ? '' : normalized;
+}
+
 function parseWorkbook(buffer: Buffer) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   const sheetName = workbook.SheetNames.includes('Sheet1') ? 'Sheet1' : workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
   const rawData: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', blankrows: true });
+  const budgetWorksheet = workbook.Sheets['Budget'];
+  const budgetRawData: any[][] = budgetWorksheet
+    ? XLSX.utils.sheet_to_json(budgetWorksheet, { header: 1, defval: '', blankrows: false })
+    : [];
 
   if (rawData.length < 2) throw new Error('Spreadsheet does not contain enough rows.');
 
@@ -57,8 +71,7 @@ function parseWorkbook(buffer: Buffer) {
     const monthValues: Record<string, number> = {};
     for (let monthIndex = 0; monthIndex < months.length; monthIndex += 1) {
       const value = row[4 + monthIndex];
-      const number = typeof value === 'number' ? value : parseFloat(String(value || 0).replace(/,/g, ''));
-      monthValues[months[monthIndex]] = Number.isNaN(number) ? 0 : number;
+      monthValues[months[monthIndex]] = parseNumber(value);
     }
 
     rows.push({
@@ -69,6 +82,47 @@ function parseWorkbook(buffer: Buffer) {
       description,
       ...monthValues,
     });
+  }
+
+  if (budgetRawData.length > 1) {
+    const usedBudgetRows = new Set<number>();
+    const budgetRows = budgetRawData.slice(1).map((row, index) => ({
+      index,
+      description: normalizeMatchValue(row[25]),
+      glAccount: normalizeMatchValue(row[7]),
+      activityCode: normalizeMatchValue(row[4]),
+      allocations: Object.fromEntries(
+        months.map((month, monthIndex) => [month, parseNumber(row[10 + monthIndex])]),
+      ) as Record<string, number>,
+    }));
+
+    for (const row of rows) {
+      const recordValues = {
+        description: normalizeMatchValue(row.description),
+        glAccount: normalizeMatchValue(row.glAccount),
+        activityCode: normalizeMatchValue(row.activityCode),
+      };
+      const candidates = budgetRows
+        .map((budgetRow) => {
+          if (usedBudgetRows.has(budgetRow.index)) return null;
+          const sharedFields = [
+            ['description', recordValues.description, budgetRow.description],
+            ['glAccount', recordValues.glAccount, budgetRow.glAccount],
+            ['activityCode', recordValues.activityCode, budgetRow.activityCode],
+          ].filter(([, left, right]) => left && right);
+          const matches = sharedFields.filter(([, left, right]) => left === right).length;
+          return matches >= 2 && matches === sharedFields.length ? { budgetRow, matches } : null;
+        })
+        .filter((candidate): candidate is { budgetRow: (typeof budgetRows)[number]; matches: number } => candidate !== null)
+        .sort((a, b) => b.matches - a.matches);
+
+      const match = candidates[0]?.budgetRow;
+      if (!match) continue;
+      usedBudgetRows.add(match.index);
+      row.budgetAllocations = Object.fromEntries(
+        months.map((month) => [month, match.allocations[month] || 0]),
+      );
+    }
   }
 
   return rows;

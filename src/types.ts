@@ -16,6 +16,7 @@ export interface BudgetRecord {
   october: number;
   november: number;
   december: number;
+  budgetAllocations?: Partial<Record<MonthKey, number>>;
 }
 
 export type MonthKey =

@@ -9,6 +9,7 @@ import { BudgetRecord, TabMode, DataSourceInfo, MonthlyFilterState } from './typ
 import { MONTHS } from './utils/formatters';
 import { fetchSpreadsheetRows } from './utils/excelParser';
 import initialSampleData from './sampleRows.json';
+import { isIncomeRecord } from './data/categories';
 
 const AUTO_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const DEFAULT_EXCEL_URL =
@@ -35,6 +36,7 @@ export default function App() {
   const [records, setRecords] = useState<BudgetRecord[]>(initialSampleData as BudgetRecord[]);
   const [activeTab, setActiveTab] = useState<TabMode>('summary');
   const [filters, setFilters] = useState<MonthlyFilterState>(initialFilterState);
+  const [budgetBalancePercentage, setBudgetBalancePercentage] = useState<number | null>(null);
   const [isSyncOpen, setIsSyncOpen] = useState(false);
   const [dataSource, setDataSource] = useState<DataSourceInfo>({
     type: 'googlesheets',
@@ -47,6 +49,7 @@ export default function App() {
   // When switching tabs, clear the filters for the new month view
   const handleSelectTab = (tab: TabMode) => {
     setActiveTab(tab);
+    setBudgetBalancePercentage(null);
     setFilters((prev) => ({
       ...initialFilterState,
       excludeIncomeCategories: prev.excludeIncomeCategories,
@@ -169,6 +172,25 @@ export default function App() {
     return MONTHS.find((m) => m.key === activeTab) || MONTHS[0];
   }, [activeTab]);
 
+  const summaryBudgetBalancePercentage = useMemo(() => {
+    if (activeTab !== 'summary') return null;
+    const visibleRecords = filters.excludeIncomeCategories
+      ? records.filter((record) => !isIncomeRecord(record))
+      : records;
+    const annualBudget = visibleRecords.reduce((total, record) => {
+      const rowTotal = MONTHS.reduce(
+        (sum, month) => sum + (Number(record.budgetAllocations?.[month.key]) || 0),
+        0,
+      );
+      return total + rowTotal;
+    }, 0);
+    const yearEndBalance = visibleRecords.reduce(
+      (total, record) => total + (Number(record.december) || 0),
+      0,
+    );
+    return Math.abs(annualBudget) > 0.001 ? (yearEndBalance / annualBudget) * 100 : null;
+  }, [activeTab, records, filters.excludeIncomeCategories]);
+
   const hasActiveFilters =
     filters.activityCodes.length > 0 ||
     filters.bls.length > 0 ||
@@ -191,6 +213,7 @@ export default function App() {
         onOpenSync={() => setIsSyncOpen(true)}
         onResetFilters={handleResetFilters}
         hasActiveFilters={hasActiveFilters}
+        budgetBalancePercentage={summaryBudgetBalancePercentage ?? budgetBalancePercentage}
         activeTab={activeTab}
         totalRecords={records.length}
       />
@@ -241,6 +264,7 @@ export default function App() {
                 onClearActivityFilter={() => handleUpdateFilters({ activityCodes: [] })}
                 onClearBLFilter={() => handleUpdateFilters({ bls: [] })}
                 onClearAllFilters={handleResetFilters}
+                onBudgetBalancePercentageChange={setBudgetBalancePercentage}
               />
             </motion.div>
           ) : null}

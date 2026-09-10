@@ -20,7 +20,7 @@ import {
   isIncomeRecord,
   isRecordInCategory,
 } from '../data/categories';
-import { formatCurrency, formatCompactNumber } from '../utils/formatters';
+import { formatCurrency, formatCompactNumber, MONTHS } from '../utils/formatters';
 import {
   BarChart3,
   Filter,
@@ -51,6 +51,7 @@ interface MonthlyReportViewProps {
   onClearActivityFilter: () => void;
   onClearBLFilter: () => void;
   onClearAllFilters: () => void;
+  onBudgetBalancePercentageChange: (percentage: number | null) => void;
 }
 
 type ViewMode = 'split' | 'visuals' | 'table';
@@ -67,6 +68,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
   onClearActivityFilter,
   onClearBLFilter,
   onClearAllFilters,
+  onBudgetBalancePercentageChange,
 }) => {
   const monthKey = monthMeta.key;
   const [viewMode, setViewMode] = useState<ViewMode>('split');
@@ -188,6 +190,25 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
   const filteredGrandTotal = useMemo(() => {
     return filteredRecords.reduce((acc, r) => acc + (Number((r as any)[monthKey]) || 0), 0);
   }, [filteredRecords, monthKey]);
+
+  useEffect(() => {
+    const cumulativeBudget = filteredRecords.reduce((total, record) => {
+      let rowTotal = 0;
+      for (const month of MONTHS) {
+        rowTotal += Number(record.budgetAllocations?.[month.key]) || 0;
+        if (month.key === monthKey) break;
+      }
+      return total + rowTotal;
+    }, 0);
+    const remainingBalance = filteredRecords.reduce(
+      (total, record) => total + (Number((record as any)[monthKey]) || 0),
+      0,
+    );
+
+    onBudgetBalancePercentageChange(
+      Math.abs(cumulativeBudget) > 0.001 ? (remainingBalance / cumulativeBudget) * 100 : null,
+    );
+  }, [filteredRecords, monthKey, onBudgetBalancePercentageChange]);
 
   const filteredPercent = monthGrandTotal > 0 ? (filteredGrandTotal / monthGrandTotal) * 100 : 0;
 

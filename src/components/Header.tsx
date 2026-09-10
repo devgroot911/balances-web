@@ -14,6 +14,7 @@ interface HeaderProps {
   onOpenSync: () => void;
   onResetFilters: () => void;
   hasActiveFilters: boolean;
+  budgetBalancePercentage: number | null;
   activeTab: string;
   totalRecords: number;
 }
@@ -23,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSync,
   onResetFilters,
   hasActiveFilters,
+  budgetBalancePercentage,
   activeTab,
   totalRecords,
 }) => {
@@ -71,6 +73,18 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Actions */}
         <div className="flex items-center gap-2">
+          <div
+            className="hidden sm:block px-2.5 py-1.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-right"
+            title="Remaining balance divided by cumulative Budget sheet allocation"
+          >
+            <span className="block text-[10px] uppercase tracking-wider text-emerald-300/80">
+              Budget Balance
+            </span>
+            <span className="block text-sm font-bold font-mono text-emerald-300">
+              {budgetBalancePercentage === null ? '—' : `${budgetBalancePercentage.toFixed(1)}%`}
+            </span>
+          </div>
+
           {hasActiveFilters && (
             <button
               onClick={onResetFilters}

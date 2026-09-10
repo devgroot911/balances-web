@@ -27,11 +27,25 @@ export async function fetchSpreadsheetRows(inputUrl: string): Promise<BudgetReco
   return parseExcelData(await response.arrayBuffer());
 }
 
+function parseNumber(value: unknown): number {
+  const number = typeof value === 'number' ? value : parseFloat(String(value || 0).replace(/,/g, ''));
+  return Number.isNaN(number) ? 0 : number;
+}
+
+function normalizeMatchValue(value: unknown): string {
+  const normalized = String(value ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+  return normalized === '0' ? '' : normalized;
+}
+
 export function parseExcelData(data: ArrayBuffer | Uint8Array | string): BudgetRecord[] {
   const workbook = XLSX.read(data, { type: typeof data === 'string' ? 'string' : 'array' });
   const sheetName = workbook.SheetNames.includes('Sheet1') ? 'Sheet1' : workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
   const rawData: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', blankrows: true });
+  const budgetWorksheet = workbook.Sheets['Budget'];
+  const budgetRawData: any[][] = budgetWorksheet
+    ? XLSX.utils.sheet_to_json(budgetWorksheet, { header: 1, defval: '', blankrows: false })
+    : [];
 
   if (rawData.length < 2) {
     throw new Error('Spreadsheet does not contain enough data.');
@@ -69,14 +83,7 @@ export function parseExcelData(data: ArrayBuffer | Uint8Array | string): BudgetR
     const monthVals: Record<string, number> = {};
     for (let mIdx = 0; mIdx < months.length; mIdx++) {
       const colVal = r[4 + mIdx];
-      let num = 0;
-      if (typeof colVal === 'number') {
-        num = colVal;
-      } else if (colVal) {
-        const cleaned = String(colVal).replace(/,/g, '').trim();
-        num = parseFloat(cleaned);
-      }
-      monthVals[months[mIdx]] = isNaN(num) ? 0 : num;
+      monthVals[months[mIdx]] = parseNumber(colVal);
     }
 
     records.push({
@@ -98,6 +105,48 @@ export function parseExcelData(data: ArrayBuffer | Uint8Array | string): BudgetR
       november: monthVals.november || 0,
       december: monthVals.december || 0,
     });
+  }
+
+  if (budgetRawData.length > 1) {
+    const usedBudgetRows = new Set<number>();
+    const budgetRows = budgetRawData.slice(1).map((row, index) => ({
+      index,
+      description: normalizeMatchValue(row[25]),
+      glAccount: normalizeMatchValue(row[7]),
+      activityCode: normalizeMatchValue(row[4]),
+      allocations: Object.fromEntries(
+        months.map((month, monthIndex) => [month, parseNumber(row[10 + monthIndex])]),
+      ) as Record<string, number>,
+    }));
+
+    for (const record of records) {
+      const recordValues = {
+        description: normalizeMatchValue(record.description),
+        glAccount: normalizeMatchValue(record.glAccount),
+        activityCode: normalizeMatchValue(record.activityCode),
+      };
+      const candidates = budgetRows
+        .map((budgetRow) => {
+          if (usedBudgetRows.has(budgetRow.index)) return null;
+          const sharedFields = [
+            ['description', recordValues.description, budgetRow.description],
+            ['glAccount', recordValues.glAccount, budgetRow.glAccount],
+            ['activityCode', recordValues.activityCode, budgetRow.activityCode],
+          ].filter(([, left, right]) => left && right);
+          const matches = sharedFields.filter(([, left, right]) => left === right).length;
+          return matches >= 2 && matches === sharedFields.length ? { budgetRow, matches } : null;
+        })
+        .filter((candidate): candidate is { budgetRow: (typeof budgetRows)[number]; matches: number } => candidate !== null)
+        .sort((a, b) => b.matches - a.matches);
+
+      const match = candidates[0]?.budgetRow;
+      if (!match) continue;
+      usedBudgetRows.add(match.index);
+      record.budgetAllocations = months.reduce<Record<string, number>>((allocation, month) => {
+        allocation[month] = match.allocations[month] || 0;
+        return allocation;
+      }, {}) as Partial<Record<(typeof months)[number], number>>;
+    }
   }
 
   return records;
@@ -147,14 +196,7 @@ export function parseCSVData(csvText: string): BudgetRecord[] {
     const monthVals: Record<string, number> = {};
     for (let mIdx = 0; mIdx < months.length; mIdx++) {
       const colVal = r[4 + mIdx];
-      let num = 0;
-      if (typeof colVal === 'number') {
-        num = colVal;
-      } else if (colVal) {
-        const cleaned = String(colVal).replace(/,/g, '').trim();
-        num = parseFloat(cleaned);
-      }
-      monthVals[months[mIdx]] = isNaN(num) ? 0 : num;
+      monthVals[months[mIdx]] = parseNumber(colVal);
     }
 
     records.push({
