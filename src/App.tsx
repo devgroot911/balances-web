@@ -191,17 +191,15 @@ export default function App() {
         activeTab={activeTab}
         totalRecords={records.length}
       />
-          <ReportTabBar
-            activeTab={activeTab}
-            onSelectTab={handleSelectTab}
-            excludeIncomeCategories={filters.excludeIncomeCategories}
-            onToggleExcludeIncome={() =>
-              handleUpdateFilters({ excludeIncomeCategories: !filters.excludeIncomeCategories })
-            }
-          />
-
       {/* Power BI Report Page Navigation Tabs */}
-      <ReportTabBar activeTab={activeTab} onSelectTab={handleSelectTab} />
+      <ReportTabBar
+        activeTab={activeTab}
+        onSelectTab={handleSelectTab}
+        excludeIncomeCategories={filters.excludeIncomeCategories}
+        onToggleExcludeIncome={() =>
+          handleUpdateFilters({ excludeIncomeCategories: !filters.excludeIncomeCategories })
+        }
+      />
 
       {/* Main Report Body */}
       <main className="flex-1 max-w-[1920px] w-full mx-auto p-3 sm:p-5">
