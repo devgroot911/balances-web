@@ -27,6 +27,7 @@ const initialFilterState: MonthlyFilterState = {
     maxAmount: null,
   },
   nonZeroOnly: false,
+  excludeIncomeCategories: false,
   searchQuery: '',
 };
 
@@ -176,6 +177,7 @@ export default function App() {
     filters.amountFilter.zeroOnly ||
     filters.amountFilter.minAmount !== null ||
     filters.amountFilter.maxAmount !== null ||
+    filters.excludeIncomeCategories ||
     Boolean(filters.searchQuery);
 
   return (
@@ -189,6 +191,14 @@ export default function App() {
         activeTab={activeTab}
         totalRecords={records.length}
       />
+          <ReportTabBar
+            activeTab={activeTab}
+            onSelectTab={handleSelectTab}
+            excludeIncomeCategories={filters.excludeIncomeCategories}
+            onToggleExcludeIncome={() =>
+              handleUpdateFilters({ excludeIncomeCategories: !filters.excludeIncomeCategories })
+            }
+          />
 
       {/* Power BI Report Page Navigation Tabs */}
       <ReportTabBar activeTab={activeTab} onSelectTab={handleSelectTab} />
@@ -206,6 +216,7 @@ export default function App() {
             >
               <OverallSummaryView
                 records={records}
+                excludeIncomeCategories={filters.excludeIncomeCategories}
                 onNavigateToMonth={(month) => handleSelectTab(month)}
               />
             </motion.div>

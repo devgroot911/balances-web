@@ -8,6 +8,11 @@ export interface CategoryDef {
   match: (record: BudgetRecord) => boolean;
 }
 
+export function isIncomeRecord(record: BudgetRecord): boolean {
+  const budgetLine = Number(String(record.bl || '').replace(/,/g, '').trim());
+  return Number.isFinite(budgetLine) && budgetLine >= 30000 && budgetLine <= 40000;
+}
+
 export const REPORT_CATEGORIES: CategoryDef[] = [
   {
     key: 'salaries',

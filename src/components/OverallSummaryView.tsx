@@ -11,20 +11,26 @@ import {
   Legend,
 } from 'recharts';
 import { BudgetRecord, TabMode } from '../types';
-import { REPORT_CATEGORIES } from '../data/categories';
+import { isIncomeRecord, REPORT_CATEGORIES } from '../data/categories';
 import { formatCurrency, formatCompactNumber } from '../utils/formatters';
 import { TrendingUp, DollarSign, Tag, ArrowRight, BarChart3, Layers } from 'lucide-react';
 
 interface OverallSummaryViewProps {
   records: BudgetRecord[];
+  excludeIncomeCategories: boolean;
   onNavigateToMonth: (month: TabMode) => void;
 }
 
 export const OverallSummaryView: React.FC<OverallSummaryViewProps> = ({
   records,
+  excludeIncomeCategories,
   onNavigateToMonth,
 }) => {
   const [showAll12Months, setShowAll12Months] = useState(false);
+  const visibleRecords = useMemo(
+    () => (excludeIncomeCategories ? records.filter((r) => !isIncomeRecord(r)) : records),
+    [records, excludeIncomeCategories],
+  );
 
   // Month labels matching Power BI
   const primaryMonths = [
@@ -51,7 +57,7 @@ export const OverallSummaryView: React.FC<OverallSummaryViewProps> = ({
   // Compute category totals
   const categoryData = useMemo(() => {
     return REPORT_CATEGORIES.map((cat) => {
-      const catRows = records.filter(cat.match);
+      const catRows = visibleRecords.filter(cat.match);
       
       const monthSums = activeMonths.map((m) => {
         const sum = catRows.reduce((acc, r) => acc + (Number((r as any)[m.key]) || 0), 0);
@@ -75,15 +81,15 @@ export const OverallSummaryView: React.FC<OverallSummaryViewProps> = ({
         totalJuly,
       };
     });
-  }, [records, activeMonths]);
+  }, [visibleRecords, activeMonths]);
 
   // Overall KPIs
   const overallKPIs = useMemo(() => {
-    const totalJan = records.reduce((acc, r) => acc + (Number(r.january) || 0), 0);
-    const totalMay = records.reduce((acc, r) => acc + (Number(r.may) || 0), 0);
-    const totalJuly = records.reduce((acc, r) => acc + (Number(r.july) || 0), 0);
-    const uniqueBLs = new Set(records.map((r) => r.bl).filter(Boolean)).size;
-    const uniqueActs = new Set(records.map((r) => r.activityCode).filter(Boolean)).size;
+    const totalJan = visibleRecords.reduce((acc, r) => acc + (Number(r.january) || 0), 0);
+    const totalMay = visibleRecords.reduce((acc, r) => acc + (Number(r.may) || 0), 0);
+    const totalJuly = visibleRecords.reduce((acc, r) => acc + (Number(r.july) || 0), 0);
+    const uniqueBLs = new Set(visibleRecords.map((r) => r.bl).filter(Boolean)).size;
+    const uniqueActs = new Set(visibleRecords.map((r) => r.activityCode).filter(Boolean)).size;
 
     return {
       totalJan,
@@ -92,7 +98,7 @@ export const OverallSummaryView: React.FC<OverallSummaryViewProps> = ({
       uniqueBLs,
       uniqueActs,
     };
-  }, [records]);
+  }, [visibleRecords]);
 
   return (
     <div className="space-y-5 pb-12">
@@ -186,7 +192,7 @@ export const OverallSummaryView: React.FC<OverallSummaryViewProps> = ({
               {overallKPIs.uniqueBLs} BLs / {overallKPIs.uniqueActs} Acts
             </span>
             <span className="text-[10px] text-slate-500 block mt-0.5">
-              Across {records.length} total account entries
+              Across {visibleRecords.length} total account entries
             </span>
           </div>
         </div>

@@ -6,7 +6,6 @@ import {
   FilterX,
   Database,
   Calendar,
-  Layers,
 } from 'lucide-react';
 import { DataSourceInfo, FilterState } from '../types';
 

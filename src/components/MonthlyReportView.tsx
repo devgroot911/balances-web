@@ -14,7 +14,12 @@ import {
 import { BudgetRecord, MonthMeta, MonthlyFilterState } from '../types';
 import { AccountTable } from './AccountTable';
 import { FilterBar } from './FilterBar';
-import { REPORT_CATEGORIES, getRecordCategory, isRecordInCategory } from '../data/categories';
+import {
+  REPORT_CATEGORIES,
+  getRecordCategory,
+  isIncomeRecord,
+  isRecordInCategory,
+} from '../data/categories';
 import { formatCurrency, formatCompactNumber } from '../utils/formatters';
 import {
   BarChart3,
@@ -116,6 +121,9 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
   // 1. Filter records for the table based on ALL active filters
   const filteredRecords = useMemo(() => {
     return records.filter((r) => {
+      if (filters.excludeIncomeCategories && isIncomeRecord(r)) {
+        return false;
+      }
       // Activity Code filter
       if (filters.activityCodes.length > 0 && !filters.activityCodes.includes(r.activityCode)) {
         return false;
@@ -185,6 +193,9 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
   // Cross-filtered by BL, GL, Category, Amount filters (not by activityCodes itself so other bars can be clicked)
   const activityChartData = useMemo(() => {
     let base = records;
+    if (filters.excludeIncomeCategories) {
+      base = base.filter((r) => !isIncomeRecord(r));
+    }
     if (filters.bls.length > 0) {
       base = base.filter((r) => filters.bls.includes(r.bl));
     }
@@ -236,6 +247,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
     filters.categories,
     filters.glAccounts,
     filters.descriptions,
+    filters.excludeIncomeCategories,
     filters.nonZeroOnly,
     filters.amountFilter?.nonZeroOnly,
     activitySortOrder,
@@ -246,6 +258,9 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
   // Cross-filtered by Activity Code, GL, Category, Amount filters (not by bls itself so all BL bars remain visible)
   const blChartData = useMemo(() => {
     let base = records;
+    if (filters.excludeIncomeCategories) {
+      base = base.filter((r) => !isIncomeRecord(r));
+    }
     if (filters.activityCodes.length > 0) {
       base = base.filter((r) => filters.activityCodes.includes(r.activityCode));
     }
@@ -297,6 +312,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
     filters.categories,
     filters.glAccounts,
     filters.descriptions,
+    filters.excludeIncomeCategories,
     filters.nonZeroOnly,
     filters.amountFilter?.nonZeroOnly,
     blSortOrder,
@@ -306,6 +322,9 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
   // 4. Chart Data: Operational Category Distribution
   const categoryChartData = useMemo(() => {
     let base = records;
+    if (filters.excludeIncomeCategories) {
+      base = base.filter((r) => !isIncomeRecord(r));
+    }
     if (filters.activityCodes.length > 0) {
       base = base.filter((r) => filters.activityCodes.includes(r.activityCode));
     }
@@ -335,7 +354,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
     return Array.from(map.values())
       .filter((item) => item.amount > 0)
       .sort((a, b) => b.amount - a.amount);
-  }, [records, monthKey, filters.activityCodes, filters.bls]);
+  }, [records, monthKey, filters.activityCodes, filters.bls, filters.excludeIncomeCategories]);
 
   // Custom tooltips
   const CustomActivityTooltip = ({ active, payload }: any) => {
@@ -392,6 +411,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
     filters.glAccounts.length > 0 ||
     filters.descriptions.length > 0 ||
     filters.categories.length > 0 ||
+    filters.excludeIncomeCategories ||
     filters.nonZeroOnly ||
     filters.amountFilter.nonZeroOnly ||
     filters.amountFilter.zeroOnly ||

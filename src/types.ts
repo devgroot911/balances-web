@@ -76,6 +76,7 @@ export interface MonthlyFilterState {
     maxAmount: number | null;
   };
   nonZeroOnly: boolean;
+  excludeIncomeCategories: boolean;
   searchQuery: string;
 }
 
