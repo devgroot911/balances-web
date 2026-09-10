@@ -1,0 +1,5 @@
+{
+  "name": "Budget Balance PowerBI Report",
+  "description": "Interactive PowerBI-style financial report with monthly balances, activity code cross-filtering, category breakdown, and live Excel/Google Sheet sync.",
+  "requestFramePermissions": []
+}
