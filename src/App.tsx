@@ -12,7 +12,7 @@ import initialSampleData from './sampleRows.json';
 
 const AUTO_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const DEFAULT_EXCEL_URL =
-  'https://soscv-my.sharepoint.com/:x:/g/personal/gayan_rathnayake_soscvsrilanka_org/IQAVEppF2Jj2Spwa_PHVq7pxAf5gbDn2hmaAeYtPjEoIsZQ?e=zeTg9Y';
+  'https://docs.google.com/spreadsheets/d/1FPhFbVBHksaqiIllJhhkD6ay_rN8XY0vPPg3TRP1tZQ/edit?usp=sharing';
 
 const initialFilterState: MonthlyFilterState = {
   activityCodes: [],
