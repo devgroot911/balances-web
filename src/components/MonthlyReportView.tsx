@@ -84,14 +84,17 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
   const [blSortOrder, setBlSortOrder] = useState<'desc' | 'asc' | 'code'>('desc');
   const [blTopN, setBlTopN] = useState<number>(18);
 
-  const reportRecords = useMemo(
+  const allReportRecords = useMemo(
     () =>
       records.filter(
-        (r) =>
-          (!filters.excludeIncomeCategories || !isIncomeRecord(r)) &&
-          !filters.uncheckedRecordIds.includes(r.id),
+        (r) => !filters.excludeIncomeCategories || !isIncomeRecord(r),
       ),
-    [records, filters.excludeIncomeCategories, filters.uncheckedRecordIds],
+    [records, filters.excludeIncomeCategories],
+  );
+
+  const reportRecords = useMemo(
+    () => allReportRecords.filter((r) => !filters.uncheckedRecordIds.includes(r.id)),
+    [allReportRecords, filters.uncheckedRecordIds],
   );
 
   // Keyboard shortcut: Escape exits fullscreen
@@ -199,6 +202,15 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
   const filteredGrandTotal = useMemo(() => {
     return filteredRecords.reduce((acc, r) => acc + (Number((r as any)[monthKey]) || 0), 0);
   }, [filteredRecords, monthKey]);
+
+  const tableRecords = useMemo(() => {
+    const uncheckedRows = allReportRecords.filter(
+      (record) =>
+        filters.uncheckedRecordIds.includes(record.id) &&
+        !filteredRecords.some((filteredRecord) => filteredRecord.id === record.id),
+    );
+    return [...filteredRecords, ...uncheckedRows];
+  }, [allReportRecords, filteredRecords, filters.uncheckedRecordIds]);
 
   useEffect(() => {
     const cumulativeBudget = filteredRecords.reduce((total, record) => {
@@ -832,8 +844,8 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
           {/* Left Column: Accounts Table */}
           <div className="lg:col-span-6 xl:col-span-6 flex flex-col">
             <AccountTable
-              allRecords={reportRecords}
-              records={filteredRecords}
+              allRecords={allReportRecords}
+              records={tableRecords}
               monthMeta={monthMeta}
               filters={filters}
               onUpdateFilters={onUpdateFilters}
@@ -894,8 +906,8 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
 
       {viewMode === 'table' && (
         <AccountTable
-          allRecords={reportRecords}
-          records={filteredRecords}
+          allRecords={allReportRecords}
+          records={tableRecords}
           monthMeta={monthMeta}
           filters={filters}
           onUpdateFilters={onUpdateFilters}
@@ -977,8 +989,8 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
             {/* Left Side: Account Lines Table (fits 100% height, internal scroll only) */}
             <div className="lg:col-span-6 xl:col-span-6 h-full flex flex-col min-h-0 overflow-hidden">
               <AccountTable
-                allRecords={reportRecords}
-                records={filteredRecords}
+                allRecords={allReportRecords}
+                records={tableRecords}
                 monthMeta={monthMeta}
                 filters={filters}
                 onUpdateFilters={onUpdateFilters}

@@ -191,8 +191,10 @@ export const AccountTable: React.FC<AccountTableProps> = ({
 
   // Total amount of currently filtered records
   const totalAmount = useMemo(() => {
-    return searchedRecords.reduce((acc, r) => acc + (Number((r as any)[monthKey]) || 0), 0);
-  }, [searchedRecords, monthKey]);
+    return searchedRecords
+      .filter((record) => !filters.uncheckedRecordIds.includes(record.id))
+      .reduce((acc, r) => acc + (Number((r as any)[monthKey]) || 0), 0);
+  }, [searchedRecords, monthKey, filters.uncheckedRecordIds]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(sortedRecords.length / pageSize));
