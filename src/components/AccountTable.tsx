@@ -28,6 +28,8 @@ interface AccountTableProps {
   onClearActivityFilter: () => void;
   onClearBLFilter: () => void;
   onClearAllFilters?: () => void;
+  onToggleRecord: (recordId: string) => void;
+  onCheckAllRecords: () => void;
   isFullScreen?: boolean;
 }
 
@@ -47,6 +49,8 @@ export const AccountTable: React.FC<AccountTableProps> = ({
   onClearActivityFilter,
   onClearBLFilter,
   onClearAllFilters,
+  onToggleRecord,
+  onCheckAllRecords,
   isFullScreen = false,
 }) => {
   const [localSearch, setLocalSearch] = useState('');
@@ -256,6 +260,15 @@ export const AccountTable: React.FC<AccountTableProps> = ({
               </span>
             </h3>
 
+            <button
+              type="button"
+              onClick={onCheckAllRecords}
+              className="px-2 py-1 rounded border border-emerald-500/40 bg-emerald-500/10 text-[11px] font-medium text-emerald-300 hover:bg-emerald-500/20 cursor-pointer"
+              title="Check all account lines across every report"
+            >
+              Check all
+            </button>
+
             {hasAnyFilterActive && (
               <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-medium flex items-center gap-1">
                 <Filter className="w-2.5 h-2.5" />
@@ -442,6 +455,9 @@ export const AccountTable: React.FC<AccountTableProps> = ({
         <table className="w-full border-collapse text-left">
           <thead className="bg-slate-950/95 text-slate-300 font-semibold sticky top-0 z-20 border-b border-slate-800 backdrop-blur-sm">
             <tr>
+              <th className="py-2.5 px-2 border-r border-slate-800/80 w-16 text-center">
+                <span className="text-[10px] uppercase tracking-wide text-emerald-300">Include</span>
+              </th>
               {/* BL Column Header with Popover Filter + Sort */}
               <th className="py-2.5 px-3 border-r border-slate-800/80 select-none w-28 transition-colors">
                 <div className="flex items-center justify-between gap-1">
@@ -590,7 +606,7 @@ export const AccountTable: React.FC<AccountTableProps> = ({
           <tbody className="divide-y divide-slate-800/60">
             {paginatedRecords.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-12 text-center text-slate-500">
+                <td colSpan={6} className="py-12 text-center text-slate-500">
                   <div className="max-w-sm mx-auto space-y-2">
                     <p className="font-medium text-slate-400">
                       No matching account lines found
@@ -627,6 +643,15 @@ export const AccountTable: React.FC<AccountTableProps> = ({
                         : ''
                     }`}
                   >
+                    <td className="py-2 px-2 border-r border-slate-800/60 text-center w-16">
+                      <input
+                        type="checkbox"
+                        checked={!filters.uncheckedRecordIds.includes(r.id)}
+                        onChange={() => onToggleRecord(r.id)}
+                        aria-label={`Include ${r.description || r.id} in all reports`}
+                        className="h-3.5 w-3.5 accent-emerald-500 cursor-pointer"
+                      />
+                    </td>
                     {/* BL Cell - Click to isolate (or Ctrl-click to toggle) */}
                     <td className="py-2 px-3 border-r border-slate-800/60 font-mono text-slate-300 font-medium">
                       <button
@@ -708,7 +733,7 @@ export const AccountTable: React.FC<AccountTableProps> = ({
           {/* Sticky Table Summary Footer */}
           <tfoot className="bg-slate-950 font-semibold text-slate-200 sticky bottom-0 border-t border-slate-800 z-10">
             <tr>
-              <td colSpan={2} className="py-2.5 px-3 border-r border-slate-800 text-slate-400 text-xs">
+              <td colSpan={3} className="py-2.5 px-3 border-r border-slate-800 text-slate-400 text-xs">
                 Total for {sortedRecords.length} lines:
               </td>
               <td className="py-2.5 px-3 border-r border-slate-800 text-right font-mono text-amber-400 text-xs sm:text-sm font-bold">

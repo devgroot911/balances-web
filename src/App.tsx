@@ -29,6 +29,7 @@ const initialFilterState: MonthlyFilterState = {
   },
   nonZeroOnly: false,
   excludeIncomeCategories: false,
+  uncheckedRecordIds: [],
   searchQuery: '',
 };
 
@@ -62,6 +63,15 @@ export default function App() {
 
   const handleUpdateFilters = (newFilters: Partial<MonthlyFilterState>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
+  };
+
+  const handleToggleRecord = (recordId: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      uncheckedRecordIds: prev.uncheckedRecordIds.includes(recordId)
+        ? prev.uncheckedRecordIds.filter((id) => id !== recordId)
+        : [...prev.uncheckedRecordIds, recordId],
+    }));
   };
 
   // Toggle helpers for multi-selection
@@ -175,8 +185,11 @@ export default function App() {
   const summaryBudgetBalancePercentage = useMemo(() => {
     if (activeTab !== 'summary') return null;
     const visibleRecords = filters.excludeIncomeCategories
-      ? records.filter((record) => !isIncomeRecord(record))
-      : records;
+      ? records.filter(
+          (record) =>
+            !isIncomeRecord(record) && !filters.uncheckedRecordIds.includes(record.id),
+        )
+      : records.filter((record) => !filters.uncheckedRecordIds.includes(record.id));
     const annualBudget = visibleRecords.reduce((total, record) => {
       const rowTotal = MONTHS.reduce(
         (sum, month) => sum + (Number(record.budgetAllocations?.[month.key]) || 0),
@@ -189,7 +202,7 @@ export default function App() {
       0,
     );
     return Math.abs(annualBudget) > 0.001 ? (yearEndBalance / annualBudget) * 100 : null;
-  }, [activeTab, records, filters.excludeIncomeCategories]);
+  }, [activeTab, records, filters.excludeIncomeCategories, filters.uncheckedRecordIds]);
 
   const hasActiveFilters =
     filters.activityCodes.length > 0 ||
@@ -203,6 +216,7 @@ export default function App() {
     filters.amountFilter.minAmount !== null ||
     filters.amountFilter.maxAmount !== null ||
     filters.excludeIncomeCategories ||
+    filters.uncheckedRecordIds.length > 0 ||
     Boolean(filters.searchQuery);
 
   return (
@@ -241,6 +255,7 @@ export default function App() {
               <OverallSummaryView
                 records={records}
                 excludeIncomeCategories={filters.excludeIncomeCategories}
+                uncheckedRecordIds={filters.uncheckedRecordIds}
                 onNavigateToMonth={(month) => handleSelectTab(month)}
               />
             </motion.div>
@@ -265,6 +280,8 @@ export default function App() {
                 onClearBLFilter={() => handleUpdateFilters({ bls: [] })}
                 onClearAllFilters={handleResetFilters}
                 onBudgetBalancePercentageChange={setBudgetBalancePercentage}
+                onToggleRecord={handleToggleRecord}
+                onCheckAllRecords={() => handleUpdateFilters({ uncheckedRecordIds: [] })}
               />
             </motion.div>
           ) : null}

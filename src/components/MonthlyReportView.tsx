@@ -52,6 +52,8 @@ interface MonthlyReportViewProps {
   onClearBLFilter: () => void;
   onClearAllFilters: () => void;
   onBudgetBalancePercentageChange: (percentage: number | null) => void;
+  onToggleRecord: (recordId: string) => void;
+  onCheckAllRecords: () => void;
 }
 
 type ViewMode = 'split' | 'visuals' | 'table';
@@ -69,6 +71,8 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
   onClearBLFilter,
   onClearAllFilters,
   onBudgetBalancePercentageChange,
+  onToggleRecord,
+  onCheckAllRecords,
 }) => {
   const monthKey = monthMeta.key;
   const [viewMode, setViewMode] = useState<ViewMode>('split');
@@ -81,8 +85,13 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
   const [blTopN, setBlTopN] = useState<number>(18);
 
   const reportRecords = useMemo(
-    () => (filters.excludeIncomeCategories ? records.filter((r) => !isIncomeRecord(r)) : records),
-    [records, filters.excludeIncomeCategories],
+    () =>
+      records.filter(
+        (r) =>
+          (!filters.excludeIncomeCategories || !isIncomeRecord(r)) &&
+          !filters.uncheckedRecordIds.includes(r.id),
+      ),
+    [records, filters.excludeIncomeCategories, filters.uncheckedRecordIds],
   );
 
   // Keyboard shortcut: Escape exits fullscreen
@@ -835,6 +844,8 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
               onClearActivityFilter={onClearActivityFilter}
               onClearBLFilter={onClearBLFilter}
               onClearAllFilters={onClearAllFilters}
+              onToggleRecord={onToggleRecord}
+              onCheckAllRecords={onCheckAllRecords}
             />
           </div>
 
@@ -895,6 +906,8 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
           onClearActivityFilter={onClearActivityFilter}
           onClearBLFilter={onClearBLFilter}
           onClearAllFilters={onClearAllFilters}
+          onToggleRecord={onToggleRecord}
+          onCheckAllRecords={onCheckAllRecords}
         />
       )}
 
@@ -976,6 +989,8 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
                 onClearActivityFilter={onClearActivityFilter}
                 onClearBLFilter={onClearBLFilter}
                 onClearAllFilters={onClearAllFilters}
+                onToggleRecord={onToggleRecord}
+                onCheckAllRecords={onCheckAllRecords}
                 isFullScreen={true}
               />
             </div>

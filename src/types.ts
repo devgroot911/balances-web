@@ -78,6 +78,7 @@ export interface MonthlyFilterState {
   };
   nonZeroOnly: boolean;
   excludeIncomeCategories: boolean;
+  uncheckedRecordIds: string[];
   searchQuery: string;
 }
 

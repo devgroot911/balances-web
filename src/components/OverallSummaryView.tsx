@@ -18,18 +18,24 @@ import { TrendingUp, DollarSign, Tag, ArrowRight, BarChart3, Layers } from 'luci
 interface OverallSummaryViewProps {
   records: BudgetRecord[];
   excludeIncomeCategories: boolean;
+  uncheckedRecordIds: string[];
   onNavigateToMonth: (month: TabMode) => void;
 }
 
 export const OverallSummaryView: React.FC<OverallSummaryViewProps> = ({
   records,
   excludeIncomeCategories,
+  uncheckedRecordIds,
   onNavigateToMonth,
 }) => {
   const [showAll12Months, setShowAll12Months] = useState(false);
   const visibleRecords = useMemo(
-    () => (excludeIncomeCategories ? records.filter((r) => !isIncomeRecord(r)) : records),
-    [records, excludeIncomeCategories],
+    () =>
+      records.filter(
+        (r) =>
+          (!excludeIncomeCategories || !isIncomeRecord(r)) && !uncheckedRecordIds.includes(r.id),
+      ),
+    [records, excludeIncomeCategories, uncheckedRecordIds],
   );
 
   // Month labels matching Power BI
