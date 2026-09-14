@@ -47,14 +47,9 @@ export default function App() {
     rowCount: initialSampleData.length,
   });
 
-  // When switching tabs, clear the filters for the new month view
   const handleSelectTab = (tab: TabMode) => {
     setActiveTab(tab);
     setBudgetBalancePercentage(null);
-    setFilters((prev) => ({
-      ...initialFilterState,
-      excludeIncomeCategories: prev.excludeIncomeCategories,
-    }));
   };
 
   const handleResetFilters = () => {
@@ -114,7 +109,6 @@ export default function App() {
   const handleDataLoaded = (newRows: BudgetRecord[], sourceInfo: DataSourceInfo) => {
     setRecords(newRows);
     setDataSource(sourceInfo);
-    handleResetFilters();
   };
 
   const handleResetToSample = () => {
@@ -125,7 +119,6 @@ export default function App() {
       lastUpdated: 'Reset to Sample',
       rowCount: initialSampleData.length,
     });
-    handleResetFilters();
   };
 
   useEffect(() => {
