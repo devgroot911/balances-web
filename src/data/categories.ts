@@ -24,7 +24,7 @@ export const REPORT_CATEGORIES: CategoryDef[] = [
     name: 'Salaries',
     color: '#0284c7', // Sky blue
     description: 'FLC Mothers, Educators, Admin, Pension & Medical, Salary Increments',
-    match: (r) => isBLInRange(r, 60000, 70000),
+    match: (r) => isBLInRange(r, 61000, 62000),
   },
   {
     key: 'activities',
