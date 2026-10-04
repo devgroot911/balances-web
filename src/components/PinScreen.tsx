@@ -9,7 +9,7 @@ export const PinScreen: React.FC<PinScreenProps> = ({ onSuccess }) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
 
-  const correctPin = import.meta.env.VITE_APP_PIN || '1234';
+  const correctPin = import.meta.env.VITE_APP_PIN || '198112';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
