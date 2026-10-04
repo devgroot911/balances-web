@@ -12,9 +12,6 @@ import {
 } from 'lucide-react';
 import { BudgetRecord, DataSourceInfo } from '../types';
 import { fetchSpreadsheetRows, parseExcelData, parseCSVData } from '../utils/excelParser';
-import { useMsal } from '@azure/msal-react';
-import { fetchSharePointExcelWithToken } from '../utils/graphApi';
-import { loginRequest } from '../authConfig';
 
 interface SyncModalProps {
   isOpen: boolean;
@@ -40,7 +37,6 @@ export const SyncModal: React.FC<SyncModalProps> = ({
   );
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const { instance, accounts } = useMsal();
 
   if (!isOpen) return null;
 
@@ -73,48 +69,35 @@ export const SyncModal: React.FC<SyncModalProps> = ({
         return;
       }
 
-      let dataRows: BudgetRecord[];
+      // First try calling our backend sync proxy
+      const response = await fetch('/api/sync-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url.trim() }),
+      });
 
-      if (type === 'sharepoint') {
-        if (accounts.length === 0) {
-          throw new Error('You must be signed in to sync from SharePoint.');
-        }
-        const tokenResponse = await instance.acquireTokenSilent({
-          ...loginRequest,
-          account: accounts[0],
+      const data = await response.json();
+
+      if (response.ok && data.success && Array.isArray(data.rows)) {
+        onDataLoaded(data.rows, {
+          type,
+          name: type === 'sharepoint' ? 'SharePoint Master Sheet' : 'Google Sheets Sync',
+          url,
+          lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          rowCount: data.rows.length,
         });
-        dataRows = await fetchSharePointExcelWithToken(url.trim(), tokenResponse.accessToken);
+
+        setStatusMessage({
+          type: 'success',
+          text: `Successfully synced ${data.rows.length} account lines from ${type === 'sharepoint' ? 'SharePoint' : 'Google Sheets'}!`,
+        });
+
+        setTimeout(() => {
+          onClose();
+        }, 1200);
       } else {
-        // Fallback for Google Sheets sync
-        const response = await fetch('/api/sync-url', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: url.trim() }),
-        });
-
-        const data = await response.json();
-        if (!response.ok || !data.success || !Array.isArray(data.rows)) {
-          throw new Error(data.error || 'Failed to sync data from the URL.');
-        }
-        dataRows = data.rows;
+        throw new Error(data.error || 'Failed to sync data from the URL.');
       }
-
-      onDataLoaded(dataRows, {
-        type,
-        name: type === 'sharepoint' ? 'SharePoint Master Sheet' : 'Google Sheets Sync',
-        url,
-        lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        rowCount: dataRows.length,
-      });
-
-      setStatusMessage({
-        type: 'success',
-        text: `Successfully synced ${dataRows.length} account lines from ${type === 'sharepoint' ? 'SharePoint' : 'Google Sheets'}!`,
-      });
-
-      setTimeout(() => {
-        onClose();
-      }, 1200);
     } catch (err: any) {
       console.error('Sync error:', err);
       setStatusMessage({
