@@ -10,6 +10,10 @@ import { MONTHS } from './utils/formatters';
 import { fetchSpreadsheetRows } from './utils/excelParser';
 import initialSampleData from './sampleRows.json';
 import { isIncomeRecord } from './data/categories';
+import { useIsAuthenticated, useMsal } from '@azure/msal-react';
+import { LoginScreen } from './components/LoginScreen';
+import { fetchSharePointExcelWithToken } from './utils/graphApi';
+import { loginRequest } from './authConfig';
 
 const AUTO_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const DEFAULT_EXCEL_URL =
@@ -34,6 +38,9 @@ const initialFilterState: MonthlyFilterState = {
 };
 
 export default function App() {
+  const isAuthenticated = useIsAuthenticated();
+  const { instance, accounts } = useMsal();
+  
   const [records, setRecords] = useState<BudgetRecord[]>(initialSampleData as BudgetRecord[]);
   const [activeTab, setActiveTab] = useState<TabMode>('summary');
   const [filters, setFilters] = useState<MonthlyFilterState>(initialFilterState);
@@ -134,6 +141,16 @@ export default function App() {
 
         if (window.location.protocol === 'file:') {
           rows = await fetchSpreadsheetRows(workbookUrl);
+        } else if (workbookUrl.includes('sharepoint.com') || workbookUrl.includes('onedrive')) {
+          if (accounts.length > 0) {
+            const tokenResponse = await instance.acquireTokenSilent({
+              ...loginRequest,
+              account: accounts[0],
+            });
+            rows = await fetchSharePointExcelWithToken(workbookUrl, tokenResponse.accessToken);
+          } else {
+            throw new Error('Not authenticated to fetch SharePoint file.');
+          }
         } else {
           const response = await fetch('/api/sync-url', {
             method: 'POST',
@@ -167,7 +184,7 @@ export default function App() {
       isCancelled = true;
       window.clearInterval(intervalId);
     };
-  }, []);
+  }, [instance, accounts]);
 
   // Find month metadata if in monthly view
   const currentMonthMeta = useMemo(() => {
@@ -211,6 +228,10 @@ export default function App() {
     filters.excludeIncomeCategories ||
     filters.uncheckedRecordIds.length > 0 ||
     Boolean(filters.searchQuery);
+
+  if (!isAuthenticated) {
+    return <LoginScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500/30 selection:text-amber-200">
