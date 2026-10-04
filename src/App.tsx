@@ -37,7 +37,7 @@ const initialFilterState: MonthlyFilterState = {
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return sessionStorage.getItem('isAuthenticated') === 'true';
+    return localStorage.getItem('isAuthenticated') === 'true';
   });
 
   const [records, setRecords] = useState<BudgetRecord[]>(initialSampleData as BudgetRecord[]);

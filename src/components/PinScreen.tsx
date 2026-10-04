@@ -14,7 +14,7 @@ export const PinScreen: React.FC<PinScreenProps> = ({ onSuccess }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (pin === correctPin) {
-      sessionStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('isAuthenticated', 'true');
       onSuccess();
     } else {
       setError(true);
