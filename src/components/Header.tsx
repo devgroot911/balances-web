@@ -6,6 +6,7 @@ import {
   FilterX,
   Database,
   Calendar,
+  LogOut,
 } from 'lucide-react';
 import { DataSourceInfo, FilterState } from '../types';
 
@@ -17,6 +18,7 @@ interface HeaderProps {
   budgetBalancePercentage: number | null;
   activeTab: string;
   totalRecords: number;
+  onLogout: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -27,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
   budgetBalancePercentage,
   activeTab,
   totalRecords,
+  onLogout,
 }) => {
   const downloadSample = () => {
     const link = document.createElement('a');
@@ -114,6 +117,16 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Download className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Export Excel</span>
+          </button>
+          
+          <button
+            onClick={onLogout}
+            id="btn-logout"
+            className="px-2.5 py-1.5 rounded text-xs font-medium bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1.5 transition-colors cursor-pointer ml-2"
+            title="Lock Dashboard"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Lock</span>
           </button>
         </div>
       </div>

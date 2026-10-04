@@ -222,6 +222,11 @@ export default function App() {
     return <PinScreen onSuccess={() => setIsAuthenticated(true)} />;
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    setIsAuthenticated(false);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500/30 selection:text-amber-200">
       {/* Top Application Header */}
@@ -233,6 +238,7 @@ export default function App() {
         budgetBalancePercentage={summaryBudgetBalancePercentage ?? budgetBalancePercentage}
         activeTab={activeTab}
         totalRecords={records.length}
+        onLogout={handleLogout}
       />
       {/* Power BI Report Page Navigation Tabs */}
       <ReportTabBar
