@@ -66,7 +66,7 @@ export const OverallSummaryView: React.FC<OverallSummaryViewProps> = ({
       const catRows = visibleRecords.filter(cat.match);
       
       const monthSums = activeMonths.map((m) => {
-        const sum = catRows.reduce((acc, r) => acc + (Number((r as any)[m.key]) || 0), 0);
+        const sum = catRows.reduce((acc, r) => acc + (Number(r[m.key as keyof BudgetRecord]) || 0), 0);
         return {
           monthKey: m.key,
           label: m.label,

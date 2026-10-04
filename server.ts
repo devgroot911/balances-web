@@ -160,6 +160,15 @@ app.post('/api/sync-url', async (req, res) => {
     }
 
     url = url.trim();
+    try {
+      const parsedUrl = new URL(url);
+      const allowedHosts = ['docs.google.com', 'onedrive.live.com', '1drv.ms', 'sharepoint.com'];
+      if (!allowedHosts.some(host => parsedUrl.hostname === host || parsedUrl.hostname.endsWith(`.${host}`))) {
+        return res.status(403).json({ error: 'Unsupported or unverified host URL.' });
+      }
+    } catch {
+      return res.status(400).json({ error: 'Invalid URL provided.' });
+    }
 
     // Format SharePoint / OneDrive link for direct download
     if (url.includes('sharepoint.com') || url.includes('1drv.ms') || url.includes('onedrive.live.com')) {

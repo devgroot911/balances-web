@@ -139,7 +139,18 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: 'URL is required' });
     }
 
-    const response = await fetch(getDownloadUrl(inputUrl.trim()));
+    const trimmedUrl = inputUrl.trim();
+    try {
+      const parsedUrl = new URL(trimmedUrl);
+      const allowedHosts = ['docs.google.com', 'onedrive.live.com', '1drv.ms', 'sharepoint.com'];
+      if (!allowedHosts.some(host => parsedUrl.hostname === host || parsedUrl.hostname.endsWith(`.${host}`))) {
+        return res.status(403).json({ error: 'Unsupported or unverified host URL.' });
+      }
+    } catch {
+      return res.status(400).json({ error: 'Invalid URL provided.' });
+    }
+
+    const response = await fetch(getDownloadUrl(trimmedUrl));
     if (!response.ok) {
       throw new Error(`Remote workbook request failed with status ${response.status}.`);
     }

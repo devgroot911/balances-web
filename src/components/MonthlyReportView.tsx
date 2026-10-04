@@ -166,7 +166,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
         if (!matchesAnyCat) return false;
       }
       // Amount Filter logic
-      const val = Number((r as any)[monthKey]) || 0;
+      const val = Number(r[monthKey as keyof BudgetRecord]) || 0;
       if (filters.nonZeroOnly || filters.amountFilter?.nonZeroOnly) {
         if (Math.abs(val) < 0.001) return false;
       }
@@ -195,12 +195,12 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
 
   // Grand total for the month (unfiltered)
   const monthGrandTotal = useMemo(() => {
-    return reportRecords.reduce((acc, r) => acc + (Number((r as any)[monthKey]) || 0), 0);
+    return reportRecords.reduce((acc, r) => acc + (Number(r[monthKey as keyof BudgetRecord]) || 0), 0);
   }, [reportRecords, monthKey]);
 
   // Filtered total for the month
   const filteredGrandTotal = useMemo(() => {
-    return filteredRecords.reduce((acc, r) => acc + (Number((r as any)[monthKey]) || 0), 0);
+    return filteredRecords.reduce((acc, r) => acc + (Number(r[monthKey as keyof BudgetRecord]) || 0), 0);
   }, [filteredRecords, monthKey]);
 
   const tableRecords = useMemo(() => {
@@ -222,7 +222,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
       return total + rowTotal;
     }, 0);
     const remainingBalance = filteredRecords.reduce(
-      (total, record) => total + (Number((record as any)[monthKey]) || 0),
+      (total, record) => total + (Number(record[monthKey as keyof BudgetRecord]) || 0),
       0,
     );
 
@@ -250,14 +250,14 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
       base = base.filter((r) => filters.descriptions.includes(r.description?.trim() || ''));
     }
     if (filters.nonZeroOnly || filters.amountFilter?.nonZeroOnly) {
-      base = base.filter((r) => Math.abs(Number((r as any)[monthKey]) || 0) > 0.001);
+      base = base.filter((r) => Math.abs(Number(r[monthKey as keyof BudgetRecord]) || 0) > 0.001);
     }
 
     const agg: Record<string, { activityCode: string; amount: number; count: number; desc: string }> = {};
 
     for (const r of base) {
       const code = r.activityCode || '0';
-      const val = Number((r as any)[monthKey]) || 0;
+      const val = Number(r[monthKey as keyof BudgetRecord]) || 0;
       if (!agg[code]) {
         agg[code] = {
           activityCode: code,
@@ -312,14 +312,14 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
       base = base.filter((r) => filters.descriptions.includes(r.description?.trim() || ''));
     }
     if (filters.nonZeroOnly || filters.amountFilter?.nonZeroOnly) {
-      base = base.filter((r) => Math.abs(Number((r as any)[monthKey]) || 0) > 0.001);
+      base = base.filter((r) => Math.abs(Number(r[monthKey as keyof BudgetRecord]) || 0) > 0.001);
     }
 
     const agg: Record<string, { bl: string; amount: number; count: number; desc: string }> = {};
 
     for (const r of base) {
       const bl = r.bl || 'Unassigned';
-      const val = Number((r as any)[monthKey]) || 0;
+      const val = Number(r[monthKey as keyof BudgetRecord]) || 0;
       if (!agg[bl]) {
         agg[bl] = {
           bl,
@@ -377,7 +377,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
       const catName = getRecordCategory(r);
       const catDef = REPORT_CATEGORIES.find((c) => c.name === catName);
       const catKey = catDef ? catDef.key : 'other';
-      const val = Number((r as any)[monthKey]) || 0;
+      const val = Number(r[monthKey as keyof BudgetRecord]) || 0;
 
       const item = map.get(catKey);
       if (item) {
