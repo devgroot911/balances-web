@@ -11,6 +11,8 @@ import { fetchSpreadsheetRows } from './utils/excelParser';
 import initialSampleData from './sampleRows.json';
 import { isIncomeRecord } from './data/categories';
 
+import { PinScreen } from './components/PinScreen';
+
 const AUTO_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const DEFAULT_EXCEL_URL =
   'https://docs.google.com/spreadsheets/d/1FPhFbVBHksaqiIllJhhkD6ay_rN8XY0vPPg3TRP1tZQ/edit?gid=0#gid=0';
@@ -34,6 +36,10 @@ const initialFilterState: MonthlyFilterState = {
 };
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return sessionStorage.getItem('isAuthenticated') === 'true';
+  });
+
   const [records, setRecords] = useState<BudgetRecord[]>(initialSampleData as BudgetRecord[]);
   const [activeTab, setActiveTab] = useState<TabMode>('summary');
   const [filters, setFilters] = useState<MonthlyFilterState>(initialFilterState);
@@ -211,6 +217,10 @@ export default function App() {
     filters.excludeIncomeCategories ||
     filters.uncheckedRecordIds.length > 0 ||
     Boolean(filters.searchQuery);
+
+  if (!isAuthenticated) {
+    return <PinScreen onSuccess={() => setIsAuthenticated(true)} />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500/30 selection:text-amber-200">

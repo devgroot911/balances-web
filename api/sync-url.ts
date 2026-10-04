@@ -128,6 +128,8 @@ function parseWorkbook(buffer: Buffer) {
   return rows;
 }
 
+import { GoogleAuth } from 'google-auth-library';
+
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -140,8 +142,9 @@ export default async function handler(req: any, res: any) {
     }
 
     const trimmedUrl = inputUrl.trim();
+    let parsedUrl: URL;
     try {
-      const parsedUrl = new URL(trimmedUrl);
+      parsedUrl = new URL(trimmedUrl);
       const allowedHosts = ['docs.google.com', 'onedrive.live.com', '1drv.ms', 'sharepoint.com'];
       if (!allowedHosts.some(host => parsedUrl.hostname === host || parsedUrl.hostname.endsWith(`.${host}`))) {
         return res.status(403).json({ error: 'Unsupported or unverified host URL.' });
@@ -150,7 +153,36 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: 'Invalid URL provided.' });
     }
 
-    const response = await fetch(getDownloadUrl(trimmedUrl));
+    let fetchOptions: RequestInit = {};
+    if (parsedUrl.hostname === 'docs.google.com') {
+      const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+      const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+      if (clientEmail && privateKey) {
+        try {
+          const auth = new GoogleAuth({
+            credentials: {
+              client_email: clientEmail,
+              private_key: privateKey,
+            },
+            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly', 'https://www.googleapis.com/auth/drive.readonly'],
+          });
+          const client = await auth.getClient();
+          const token = await client.getAccessToken();
+          if (token.token) {
+            fetchOptions = {
+              headers: {
+                Authorization: `Bearer ${token.token}`,
+              },
+            };
+          }
+        } catch (authErr) {
+          console.warn('Failed to authenticate with Google API:', authErr);
+        }
+      }
+    }
+
+    const response = await fetch(getDownloadUrl(trimmedUrl), fetchOptions);
     if (!response.ok) {
       throw new Error(`Remote workbook request failed with status ${response.status}.`);
     }
